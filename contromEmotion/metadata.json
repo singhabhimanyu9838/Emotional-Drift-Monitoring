@@ -1,0 +1,8 @@
+{
+  "name": "Sonia - Emotional Wellness & Drift Monitoring",
+  "description": "A real-time AI-powered emotional wellness platform that acts as a virtual psychologist, tracking emotional drift through chat, voice notes, and live calls.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
