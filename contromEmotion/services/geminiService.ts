@@ -1,97 +1,175 @@
+/// <reference types="vite/client" />
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { TEXT_MODEL, EMOTION_SCHEMA, REPORT_SCHEMA, SYSTEM_PROMPT } from "../constants";
-import { UserContext, EmotionData, JournalEntry, Message } from "../types";
+import { UserContext, JournalEntry, Message } from "../types";
+
+/* ================= ENV (VITE SAFE) ================= */
+
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+
+if (!API_KEY) {
+  console.error("❌ Missing Gemini API Key. Add VITE_GEMINI_API_KEY in .env.local");
+}
+
+/* ================= GEMINI SERVICE ================= */
 
 export class GeminiService {
   private ai: GoogleGenAI;
 
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    this.ai = new GoogleGenAI({
+      apiKey: API_KEY || ""
+    });
   }
+
+  /* ---------- CHAT RESPONSE ---------- */
 
   async analyzeAndRespond(
-    text: string, 
-    userContext: UserContext, 
-    history: any[] = []
+    text: string,
+    userContext: UserContext
   ) {
-    const response = await this.ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [
-        { role: 'user', parts: [{ text }] }
-      ],
-      config: {
-        systemInstruction: SYSTEM_PROMPT(userContext.role, userContext.language),
-        responseMimeType: "application/json",
-        responseSchema: EMOTION_SCHEMA,
-      },
-    });
-
     try {
-      return JSON.parse(response.text || '{}');
-    } catch (e) {
-      console.error("Failed to parse AI response", e);
+      const response = await this.ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
+          { role: "user", parts: [{ text }] }
+        ],
+        config: {
+          systemInstruction: SYSTEM_PROMPT(
+            userContext.role,
+            userContext.language
+          ),
+          responseMimeType: "application/json",
+          responseSchema: EMOTION_SCHEMA
+        }
+      });
+
+      if (!response.text) return null;
+
+      return JSON.parse(response.text);
+
+    } catch (err: any) {
+
+      /* Gemini overload fallback */
+      if (err?.error?.code === 503) {
+        return {
+          response: "Sonia is currently processing many thoughts. Please try again in a moment.",
+          label: "neutral",
+          confidence: 0.5,
+          intensity: 0
+        };
+      }
+
+      console.error("❌ Gemini chat error:", err);
       return null;
     }
   }
+
+  /* ---------- JOURNAL ANALYSIS ---------- */
 
   async analyzeJournal(text: string, userContext: UserContext) {
-    const response = await this.ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [
-        { role: 'user', parts: [{ text: `Analyze this journal entry for emotional state. Provide insights appropriate for a ${userContext.role} in ${userContext.language}. \n\nEntry: ${text}` }] }
-      ],
-      config: {
-        systemInstruction: "You are an AI emotion analyst. Output high-fidelity emotion data in JSON format.",
-        responseMimeType: "application/json",
-        responseSchema: EMOTION_SCHEMA,
-      },
-    });
-
     try {
-      return JSON.parse(response.text || '{}');
-    } catch (e) {
+      const response = await this.ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Analyze emotions for a ${userContext.role} in ${userContext.language}:\n\n${text}`
+              }
+            ]
+          }
+        ],
+        config: {
+          systemInstruction:
+            "You are an expert emotional analysis AI. Return JSON only.",
+          responseMimeType: "application/json",
+          responseSchema: EMOTION_SCHEMA
+        }
+      });
+
+      return response.text ? JSON.parse(response.text) : null;
+
+    } catch (err) {
+      console.error("❌ Gemini journal error:", err);
       return null;
     }
   }
 
-  async generateSummaryReport(entries: JournalEntry[], messages: Message[], userContext: UserContext) {
-    const dataSummary = [
-      ...entries.map(e => `[Journal] ${new Date(e.timestamp).toDateString()}: ${e.emotion.label} (${e.emotion.intensity}%)`),
-      ...messages.filter(m => m.emotion).map(m => `[Chat] ${new Date(m.timestamp).toDateString()}: ${m.emotion?.label} (${m.emotion?.intensity}%)`)
-    ].join('\n');
+  /* ---------- SUMMARY REPORT ---------- */
 
-    const response = await this.ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [
-        { role: 'user', parts: [{ text: `Generate a comprehensive emotional wellness report based on the following trajectory data:\n\n${dataSummary}\n\nTarget Context: ${userContext.role}` }] }
-      ],
-      config: {
-        systemInstruction: "You are a world-class AI psychotherapist specialized in data synthesis. Provide a professional wellness report in JSON.",
-        responseMimeType: "application/json",
-        responseSchema: REPORT_SCHEMA,
-      },
-    });
-
+  async generateSummaryReport(
+    entries: JournalEntry[],
+    messages: Message[],
+    userContext: UserContext
+  ) {
     try {
-      return JSON.parse(response.text || '{}');
-    } catch (e) {
+      const dataSummary = [
+        ...entries.map(
+          e =>
+            `[Journal] ${new Date(e.timestamp).toDateString()} → ${e.emotion.label} (${e.emotion.intensity}%)`
+        ),
+        ...messages
+          .filter(m => m.emotion)
+          .map(
+            m =>
+              `[Chat] ${new Date(m.timestamp).toDateString()} → ${m.emotion?.label} (${m.emotion?.intensity}%)`
+          )
+      ].join("\n");
+
+      const response = await this.ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                text: `Generate emotional wellness report:\n\n${dataSummary}`
+              }
+            ]
+          }
+        ],
+        config: {
+          systemInstruction:
+            "You are a clinical psychologist AI generating structured wellness reports.",
+          responseMimeType: "application/json",
+          responseSchema: REPORT_SCHEMA
+        }
+      });
+
+      return response.text ? JSON.parse(response.text) : null;
+
+    } catch (err) {
+      console.error("❌ Gemini report error:", err);
       return null;
     }
   }
+
+  /* ---------- VOICE TRANSCRIPTION ---------- */
 
   async transcribeVoice(audioBase64: string, mimeType: string) {
-    const response = await this.ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: {
-        parts: [
-          { inlineData: { data: audioBase64, mimeType } },
-          { text: "Transcribe this audio message accurately. Return only the transcription." }
-        ]
-      }
-    });
-    return response.text;
+    try {
+      const response = await this.ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: {
+          parts: [
+            { inlineData: { data: audioBase64, mimeType } },
+            { text: "Transcribe accurately. Return text only." }
+          ]
+        }
+      });
+
+      return response.text || "";
+
+    } catch (err) {
+      console.error("❌ Gemini voice error:", err);
+      return "";
+    }
   }
 }
+
+/* ================= EXPORT ================= */
 
 export const gemini = new GeminiService();
