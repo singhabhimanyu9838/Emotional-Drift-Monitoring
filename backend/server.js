@@ -6,11 +6,14 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/auth.js";
 import chatRoutes from "./routes/chat.js";
 
+
 dotenv.config();
 connectDB();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: "*"
+}));
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
