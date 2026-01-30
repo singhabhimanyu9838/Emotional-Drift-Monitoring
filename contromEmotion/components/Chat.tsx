@@ -5,7 +5,8 @@ import { gemini } from '../services/geminiService';
 
 /* ================= BACKEND API ================= */
 
-const CHAT_API = "http://localhost:5000/api/chat";
+const CHAT_API = `${import.meta.env.VITE_BACKEND_URL}/api/chat`;
+
 
 const generateId = () =>
   Date.now().toString() + Math.random().toString(36).slice(2);

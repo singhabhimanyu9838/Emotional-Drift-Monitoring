@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Mail, Lock, User, ArrowRight, ShieldCheck } from 'lucide-react';
 
+
 interface AuthProps {
   onLogin: (userData: any) => void;
 }
 
-const API_URL = "http://localhost:5000/api/auth";
+const API_URL = `${import.meta.env.VITE_BACKEND_URL}/api/auth`;
+
 
 const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLogin, setIsLogin] = useState(true);
