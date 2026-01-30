@@ -51,7 +51,7 @@ const Sidebar: React.FC = () => {
             <ShieldCheck className="w-5 h-5 text-indigo-400" />
             <span className="text-xs font-bold text-indigo-300 uppercase tracking-widest">Sonia Vault</span>
           </div>
-          <p className="text-[11px] text-slate-400 leading-relaxed">Your emotional data is encrypted locally. Sessions are never stored on external servers.</p>
+          <p className="text-[11px] text-slate-400 leading-relaxed">Your emotional data is encrypted external servers.</p>
         </div>
       </div>
     </div>
