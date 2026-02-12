@@ -114,7 +114,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           </p>
         </div>
 
-        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 mr-4">
+        {/* <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 mr-4">
           <button
             onClick={onLogout}
             className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-all"
@@ -128,7 +128,7 @@ const Dashboard: React.FC<DashboardProps> = ({
           >
             <UserPlus className="w-3.5 h-3.5" /> Sign Up
           </button>
-        </div>
+        </div> */}
       </header>
 
       {/* Analytics Grid */}

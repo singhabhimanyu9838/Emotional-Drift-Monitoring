@@ -117,12 +117,14 @@ const App: React.FC = () => {
         )}
 
         {/* ============ DESKTOP SIDEBAR ============ */}
-        <div className="hidden md:block md:w-64 flex-shrink-0 border-r border-white/5">
+        {/* Desktop Sidebar - Fixed */}
+        <div className="hidden md:block md:w-64 fixed inset-y-0 left-0 border-r border-white/5 bg-[#020617] z-30">
           <Sidebar />
         </div>
 
         {/* ============ MAIN CONTENT ============ */}
-        <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col min-h-screen overflow-hidden md:ml-64">
+
           {/* Mobile Top Bar */}
           <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/10">
             <button

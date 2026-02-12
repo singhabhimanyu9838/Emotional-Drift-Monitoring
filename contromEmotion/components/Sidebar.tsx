@@ -29,7 +29,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   ];
 
   return (
-    <div className="w-64 glass-sidebar flex flex-col h-full sticky top-0 z-50">
+    <div className="w-64 glass-sidebar flex flex-col h-screen overflow-y-auto">
       {/* Logo */}
       <div className="p-8 flex items-center gap-3">
         <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-indigo-500/20">
