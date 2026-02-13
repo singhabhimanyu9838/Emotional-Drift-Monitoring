@@ -14,12 +14,11 @@ import {
   Zap,
   Sparkles,
   TrendingUp,
-  FileText,
-  Loader2,
   Activity,
   History,
   LogIn,
   UserPlus,
+  LogOut,
 } from "lucide-react";
 import { Message, UserContext } from "../types";
 import { gemini } from "../services/geminiService";
@@ -29,12 +28,14 @@ interface DashboardProps {
   messages: Message[];
   userContext: UserContext;
   onLogout: () => void;
+  isAuthenticated?: boolean; // ✅ passed from App
 }
 
 const Dashboard: React.FC<DashboardProps> = ({
   messages,
   userContext,
   onLogout,
+  isAuthenticated = false,
 }) => {
   const navigate = useNavigate();
 
@@ -48,7 +49,7 @@ const Dashboard: React.FC<DashboardProps> = ({
       const report = await gemini.generateSummaryReport(
         [],
         messages,
-        userContext,
+        userContext
       );
       setReportData(report);
     } catch (e) {
@@ -72,13 +73,12 @@ const Dashboard: React.FC<DashboardProps> = ({
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
 
-    if (data.length === 0) {
-      return Array.from({ length: 5 }).map((_, i) => ({
-        time: `---`,
-        intensity: 0,
-      }));
-    }
-    return data;
+    return data.length
+      ? data
+      : Array.from({ length: 5 }).map(() => ({
+          time: "---",
+          intensity: 0,
+        }));
   }, [messages]);
 
   const distribution = useMemo(() => {
@@ -103,33 +103,52 @@ const Dashboard: React.FC<DashboardProps> = ({
   };
 
   return (
-    <div className="p-6 lg:p-12 space-y-10 max-w-7xl mx-auto animate-in fade-in duration-700">
+    <div className="p-6 lg:p-12 space-y-10 max-w-7xl mx-auto">
+      {/* ================= HEADER ================= */}
       <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3">
+        <div>
+          <h1 className="text-4xl font-black text-white flex items-center gap-3">
             Wellness Dashboard <Activity className="text-indigo-400 w-8 h-8" />
           </h1>
-          <p className="text-slate-400 font-medium">
+          <p className="text-slate-400">
             Real-time visualization of your emotional architecture.
           </p>
         </div>
 
-        {/* <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5 mr-4">
-          <button
-            onClick={onLogout}
-            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2 transition-all"
-          >
-            <LogIn className="w-3.5 h-3.5" /> Login
-          </button>
+        {/* ================= AUTH BUTTONS ================= */}
+        <div className="flex bg-white/5 p-1.5 rounded-2xl border border-white/5">
+          {!isAuthenticated ? (
+            <>
+              <button
+                onClick={() => navigate("/login")}
+                className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest text-slate-300 hover:bg-white/5 flex items-center gap-2"
+              >
+                <LogIn className="w-3.5 h-3.5" /> Login
+              </button>
 
-          <button
-            onClick={onLogout}
-            className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-500 text-white shadow-lg shadow-indigo-500/20 flex items-center gap-2 transition-all"
-          >
-            <UserPlus className="w-3.5 h-3.5" /> Sign Up
-          </button>
-        </div> */}
+              <button
+                onClick={() => navigate("/login?mode=signup")}
+                className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-indigo-500 text-white flex items-center gap-2"
+              >
+                <UserPlus className="w-3.5 h-3.5" /> Sign Up
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                onLogout();
+                navigate("/login");
+              }}
+              className="px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest bg-red-500 text-white flex items-center gap-2"
+            >
+              <LogOut className="w-3.5 h-3.5" /> Logout
+            </button>
+          )}
+        </div>
       </header>
+
+    
+
 
       {/* Analytics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

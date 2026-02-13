@@ -19,13 +19,15 @@ import Footer from "./components/Footer";
 
 import { Message, UserContext, JournalEntry } from "./types";
 
-/* ================= MAIN APP ================= */
+/* ================= APP CONTENT ================= */
 
 const AppContent: React.FC = () => {
   const location = useLocation();
 
+  /* ---------- UI STATE ---------- */
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  /* ---------- AUTH STATE ---------- */
   const [isAuthenticated, setIsAuthenticated] = useState(
     () => localStorage.getItem("sonia_auth") === "true"
   );
@@ -34,6 +36,7 @@ const AppContent: React.FC = () => {
     JSON.parse(localStorage.getItem("sonia_user") || "null")
   );
 
+  /* ---------- DATA STATE ---------- */
   const [messages, setMessages] = useState<Message[]>(() =>
     JSON.parse(localStorage.getItem("sonia_messages") || "[]")
   );
@@ -94,10 +97,16 @@ const AppContent: React.FC = () => {
     localStorage.removeItem("sonia_user");
   };
 
-  /* Close sidebar on route change (mobile) */
+  /* ---------- CLOSE SIDEBAR ON ROUTE CHANGE (MOBILE) ---------- */
   useEffect(() => {
     setSidebarOpen(false);
   }, [location.pathname]);
+
+  /* ================= PROTECTED ROUTE ================= */
+
+  const Protected = ({ children }: { children: React.ReactNode }) => {
+    return isAuthenticated ? children : <Navigate to="/login" replace />;
+  };
 
   return (
     <div className="min-h-screen flex text-slate-100 font-['Geist'] bg-[#020617] relative">
@@ -105,7 +114,7 @@ const AppContent: React.FC = () => {
       {/* ============ MOBILE SIDEBAR OVERLAY ============ */}
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 flex md:hidden">
-          <div className="w-64 bg-[#0f172a] shadow-xl">
+          <div className="w-64 h-screen bg-[#0f172a] shadow-xl overflow-y-auto">
             <Sidebar onNavigate={() => setSidebarOpen(false)} />
           </div>
 
@@ -116,7 +125,7 @@ const AppContent: React.FC = () => {
         </div>
       )}
 
-      {/* ============ DESKTOP SIDEBAR ============ */}
+      {/* ============ DESKTOP SIDEBAR (FIXED) ============ */}
       <div className="hidden md:block md:w-64 fixed inset-y-0 left-0 border-r border-white/5 bg-[#020617] z-30">
         <Sidebar />
       </div>
@@ -124,8 +133,8 @@ const AppContent: React.FC = () => {
       {/* ============ MAIN CONTENT ============ */}
       <main className="flex-1 flex flex-col min-h-screen md:ml-64">
 
-        {/* Mobile Top Bar */}
-        <div className="md:hidden flex items-center justify-between px-4 py-3 border-b border-white/10">
+        {/* ---------- MOBILE TOP BAR ---------- */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-30 flex items-center justify-between px-4 py-3 border-b border-white/10 bg-[#020617]">
           <button
             onClick={() => setSidebarOpen(true)}
             className="text-2xl text-white"
@@ -138,9 +147,12 @@ const AppContent: React.FC = () => {
           <div className="w-6" />
         </div>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-8 py-4">
+        {/* ---------- SCROLLABLE CONTENT ---------- */}
+        <div className="flex-1 overflow-y-auto custom-scrollbar px-4 sm:px-6 md:px-8 py-4 pt-20 md:pt-6">
+
           <Routes>
+
+            {/* DASHBOARD */}
             <Route
               path="/"
               element={
@@ -148,63 +160,83 @@ const AppContent: React.FC = () => {
                   messages={messages}
                   userContext={userContext}
                   onLogout={handleLogout}
+                  isAuthenticated={isAuthenticated}
                 />
               }
             />
 
-            {/* OPTIONAL LOGIN */}
-            <Route path="/login" element={<Auth onLogin={handleLogin} />} />
+            {/* AUTH */}
+            <Route
+              path="/login"
+              element={
+                isAuthenticated ? (
+                  <Navigate to="/" replace />
+                ) : (
+                  <Auth onLogin={handleLogin} />
+                )
+              }
+            />
 
+            {/* PROTECTED ROUTES */}
             <Route
               path="/chat"
               element={
-                <Chat
-                  messages={messages}
-                  onSendMessage={handleSendMessage}
-                  userContext={userContext}
-                />
+                
+                  <Chat
+                    messages={messages}
+                    onSendMessage={handleSendMessage}
+                    userContext={userContext}
+                  />
+              
               }
             />
 
             <Route
               path="/journal"
               element={
-                <Journal
-                  entries={journalEntries}
-                  onAddEntry={handleAddJournalEntry}
-                  onDeleteEntry={handleDeleteJournalEntry}
-                  userContext={userContext}
-                />
+               
+                  <Journal
+                    entries={journalEntries}
+                    onAddEntry={handleAddJournalEntry}
+                    onDeleteEntry={handleDeleteJournalEntry}
+                    userContext={userContext}
+                  />
+                
               }
             />
 
             <Route
               path="/voice"
               element={
-                <VoiceCall
-                  language={userContext.language}
-                  context={userContext.role}
-                />
+                
+                  <VoiceCall
+                    language={userContext.language}
+                    context={userContext.role}
+                  />
+              
               }
             />
 
             <Route
               path="/wellness"
               element={
-                <WellnessPath
-                  messages={messages}
-                  journalEntries={journalEntries}
-                  userContext={userContext}
-                />
+                
+                  <WellnessPath
+                    messages={messages}
+                    journalEntries={journalEntries}
+                    userContext={userContext}
+                  />
+               
               }
             />
 
             <Route path="/about" element={<About />} />
             <Route path="*" element={<Navigate to="/" replace />} />
+
           </Routes>
         </div>
 
-        {/* Footer */}
+        {/* ---------- FOOTER ---------- */}
         <div className="mt-auto border-t border-white/5">
           <Footer />
         </div>
